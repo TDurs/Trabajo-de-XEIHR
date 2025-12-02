@@ -1,0 +1,161 @@
+/* styles.css */
+/* Importar fuente elegante */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Variables de color */
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary: #7c3aed;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --gray: #64748b;
+    --border: #e2e8f0;
+}
+
+/* Estilos generales */
+* {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header y títulos */
+.stTitle {
+    color: var(--dark) !important;
+    font-weight: 700 !important;
+    margin-bottom: 1rem !important;
+}
+
+.stHeader {
+    color: var(--dark) !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+
+/* Sidebar */
+.css-1d391kg, .css-1lcbmhc {
+    background-color: #f8fafc;
+    border-right: 1px solid var(--border);
+}
+
+/* Botones de navegación */
+.stPageLink {
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid var(--border) !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stPageLink:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Botones específicos */
+.stPageLink:nth-child(1) {
+    background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.stPageLink:nth-child(2) {
+    background-color: white !important;
+    color: var(--dark) !important;
+}
+
+/* Tarjetas de información */
+.stInfo, .stWarning, .stSuccess, .stError {
+    border-radius: 12px !important;
+    border-left: 4px solid !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.stInfo {
+    border-left-color: var(--primary) !important;
+    background: linear-gradient(to right, #eff6ff, white) !important;
+}
+
+.stWarning {
+    border-left-color: var(--warning) !important;
+    background: linear-gradient(to right, #fffbeb, white) !important;
+}
+
+/* Expanders */
+.streamlit-expanderHeader {
+    font-weight: 600 !important;
+    color: var(--dark) !important;
+    border-radius: 8px !important;
+}
+
+.streamlit-expanderContent {
+    border-radius: 0 0 8px 8px !important;
+}
+
+/* Sliders y controles */
+.stSlider > div > div {
+    color: var(--primary) !important;
+}
+
+.stNumberInput > div > div > input {
+    border-radius: 6px !important;
+}
+
+/* Métricas */
+.stMetric {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+}
+
+/* Gráficos container */
+.plotly-graph-div {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* Divider */
+.stDivider {
+    margin: 2rem 0 !important;
+}
+
+/* Latex ecuaciones */
+.stLatex {
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+}
+
+/* Columnas */
+.stColumn {
+    padding: 0 1rem;
+}
+
+/* Footer implícito */
+footer {
+    visibility: hidden;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stColumn {
+        padding: 0;
+    }
+}
+
+/* Animaciones sutiles */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stApp {
+    animation: fadeIn 0.5s ease-out;
+}

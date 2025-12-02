@@ -7,6 +7,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+
+with open('stylo/dis.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+
+
 st.title("📊 Simulación del Modelo Epidemiológico XEIHR")
 
 st.markdown("""

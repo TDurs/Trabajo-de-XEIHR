@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 from scipy.integrate import odeint
+import os
 import plotly.graph_objects as go
 
 st.set_page_config(
@@ -8,6 +9,18 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+
+# --- CARGAR CSS ELEGANTE ---
+# Ruta correcta al CSS
+css_path = os.path.join(os.path.dirname(__file__), "..", "stylo", "csscaso1.css")
+
+# Cargar el CSS
+with open(css_path, "r") as f:
+    css = f.read()
+
+
+st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 # --- NAVEGACIÓN RÁPIDA ---
 st.sidebar.subheader("🧭 Navegación")
