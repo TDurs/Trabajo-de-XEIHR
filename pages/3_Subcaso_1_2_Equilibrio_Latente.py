@@ -119,107 +119,193 @@ y0 = [X0, E0, I0, 0, 0]
 ret = odeint(model, y0, t, args=(lam, mu, beta, epsilon, omega, gamma, alpha, delta))
 X, E, I, H, R = ret.T
 
-# --- VISUALIZACIÓN ---
-col1, col2 = st.columns([2, 1])
+# --- SECCIÓN 1: DINÁMICA TEMPORAL (FULL WIDTH) ---
+st.markdown("---")
+st.subheader("📈 Dinámica Temporal cerca de $P_1$")
+st.markdown("*Evolución de las 5 poblaciones desde condiciones iniciales hacia el equilibrio P₁*")
 
-with col1:
-    st.subheader("📈 Dinámica Temporal cerca de $P_1$")
-    
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=t, y=X, name="Susceptibles (X)", line=dict(color='blue', width=2)))
-    fig.add_trace(go.Scatter(x=t, y=E, name="Expuestos (E)", line=dict(color='orange', width=2)))
-    fig.add_trace(go.Scatter(x=t, y=I, name="Infecciosos (I)", line=dict(color='red', width=3)))
-    fig.add_trace(go.Scatter(x=t, y=H, name="Hospitalizados (H)", line=dict(color='purple', width=2, dash='dash')))
-    fig.add_trace(go.Scatter(x=t, y=R, name="Recuperados (R)", line=dict(color='green', width=2, dash='dash')))
-    
-    # Agregar líneas horizontales de equilibrio teórico
-    if E_p1 > 0:
-        fig.add_hline(y=X_p1, line_dash="dot", line_color="blue", annotation_text="X* (P₁)", annotation_position="bottom right")
-        fig.add_hline(y=E_p1, line_dash="dot", line_color="orange", annotation_text="E* (P₁)", annotation_position="top right")
-    
-    fig.update_layout(
-        template="plotly_white", 
-        xaxis_title="Tiempo", 
-        yaxis_title="Población",
-        height=500,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Análisis de resultados
-    st.markdown("---")
-    if E_p1 <= 0:
-        st.error("""
-        ⚠️ **Equilibrio Matemáticamente Imposible:** 
-        
-        $E_{P1} \\leq 0$. Este equilibrio no existe biológicamente con los parámetros actuales.
-        
-        **Solución:** Aumenta λ* o disminuye β para hacer $E_{P1} > 0$.
-        """)
-    elif ev3 < 0:
-        st.success("""
-        ✅ **Estable ante Infección:** 
-        
-        $\\lambda_3 < 0$. Aunque haya expuestos, los infecciosos (I) tienden a 0.
-        El sistema se mantiene en el equilibrio latente P₁.
-        """)
-    else:
-        st.error("""
-        🔥 **Inestable:** 
-        
-        $\\lambda_3 > 0$. La pequeña perturbación en I crecerá exponencialmente, 
-        llevando al sistema al equilibrio endémico P* (Caso 2).
-        """)
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=t, y=X, name="Susceptibles (X)", line=dict(color='#2563eb', width=2.5)))
+fig.add_trace(go.Scatter(x=t, y=E, name="Expuestos (E)", line=dict(color='#f59e0b', width=2.5)))
+fig.add_trace(go.Scatter(x=t, y=I, name="Infecciosos (I)", line=dict(color='#ef4444', width=3)))
+fig.add_trace(go.Scatter(x=t, y=H, name="Hospitalizados (H)", line=dict(color='#a855f7', width=2, dash='dash')))
+fig.add_trace(go.Scatter(x=t, y=R, name="Recuperados (R)", line=dict(color='#10b981', width=2, dash='dash')))
 
-with col2:
-    st.subheader("🔍 Análisis del Equilibrio $P_1$")
+# Agregar líneas horizontales de equilibrio teórico
+if E_p1 > 0:
+    fig.add_hline(y=X_p1, line_dash="dot", line_color="#2563eb", annotation_text="X* (P₁)", annotation_position="bottom right", annotation_font_color='#0f172a', annotation_font_size=11)
+    fig.add_hline(y=E_p1, line_dash="dot", line_color="#f59e0b", annotation_text="E* (P₁)", annotation_position="top right", annotation_font_color='#0f172a', annotation_font_size=11)
+
+fig.update_layout(
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    xaxis_title="Tiempo",
+    yaxis_title="Población",
+    height=550,
+    font=dict(family="'Inter', sans-serif", size=11, color='#0f172a'),
+    legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5, bgcolor='rgba(255,255,255,0.95)', bordercolor='#0f172a', borderwidth=2),
+    hovermode='x unified'
+)
+st.plotly_chart(fig, use_container_width=True)
+
+# --- SECCIÓN 2: ESTADO DEL EQUILIBRIO (3 COLUMNAS) ---
+st.markdown("---")
+st.subheader("🔍 Estado del Equilibrio $P_1$")
+
+col_p1_1, col_p1_2, col_p1_3 = st.columns(3)
+
+with col_p1_1:
+    st.markdown("""
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb;">
+        <h4 style="color: #1e293b; margin-top: 0;">📊 Valores de Equilibrio</h4>
+        <p style="color: #475569; font-size: 13px;">Coordenadas del punto P₁</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Valores del equilibrio
-    st.markdown("#### 📊 Valores Teóricos")
     st.latex(r"P_1 = \left( \frac{\mu}{\beta}, \frac{\lambda^*}{\mu} - \frac{\mu}{\beta}, 0, 0, 0 \right)")
     
-    col_met1, col_met2 = st.columns(2)
-    with col_met1:
-        st.metric("X*", f"{X_p1:.2f}")
-    with col_met2:
+    col_x, col_e = st.columns(2)
+    with col_x:
+        st.metric("X*", f"{X_p1:.3f}", help="Susceptibles en equilibrio")
+    with col_e:
         if E_p1 > 0:
-            st.metric("E*", f"{E_p1:.2f}")
+            st.metric("E*", f"{E_p1:.3f}", help="Expuestos en equilibrio")
         else:
-            st.metric("E*", "Inválido", delta="< 0", delta_color="off")
-    
-    st.markdown("---")
-    
-    # Análisis de estabilidad
-    st.markdown("#### 🎯 Análisis de Estabilidad")
-    st.markdown("**Valores Propios del Sistema:**")
-    
-    # Valor propio crítico λ₃
-    st.markdown("**λ₃ (Crítico para invasión):**")
-    if ev3 < 0:
-        st.success(f"$\\lambda_3 = {ev3:.3f}$")
-        st.caption("ESTABLE: I no puede invadir el sistema")
-    else:
-        st.error(f"$\\lambda_3 = {ev3:.3f}$")
-        st.caption("INESTABLE: I crecerá exponencialmente")
-    
-    st.markdown("**Otros valores propios:**")
-    col_ev1, col_ev2 = st.columns(2)
-    with col_ev1:
-        st.metric("λ₁", f"{ev1:.3f}")
-        st.metric("λ₄", f"{ev4:.3f}")
-    with col_ev2:
-        st.metric("λ₂", f"{ev2:.3f}")
-        st.metric("λ₅", f"{ev5:.3f}")
-    
-    st.markdown("---")
-    
-    # Información adicional
-    st.markdown("#### 📈 Métricas Adicionales")
-    R0_basic = (beta * (lam / mu)) / mu
-    st.metric("Número Reproductivo Básico (R₀)", f"{R0_basic:.3f}")
+            st.metric("E*", "N/A", help="Equilibrio no válido biológicamente")
+
+with col_p1_2:
+    st.markdown("""
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <h4 style="color: #1e293b; margin-top: 0;">🎯 Análisis de Estabilidad</h4>
+        <p style="color: #475569; font-size: 13px;">Criterio: Valor propio λ₃</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if E_p1 > 0:
-        st.metric("Determinante |J(P₁)|", f"{det_J:.2e}")
+        st.markdown("**Eigenvalor Crítico λ₃:**")
+        if ev3 < 0:
+            st.success(f"λ₃ = {ev3:.4f}", icon="✅")
+            st.caption("Sistema estable ante invasión de I")
+        else:
+            st.error(f"λ₃ = {ev3:.4f}", icon="⚠️")
+            st.caption("Sistema inestable ante perturbación en I")
+    else:
+        st.error("Equilibrio no válido", icon="❌")
+        st.caption("E* ≤ 0: No existe biológicamente")
+
+with col_p1_3:
+    st.markdown("""
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #10b981;">
+        <h4 style="color: #1e293b; margin-top: 0;">📈 Métricas del Sistema</h4>
+        <p style="color: #475569; font-size: 13px;">Indicadores reproductivos</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    R0_basic = (beta * (lam / mu)) / mu
+    st.metric("R₀ (Reproductivo)", f"{R0_basic:.3f}", help="Número reproductivo básico")
+    
+    if E_p1 > 0:
+        st.metric("|J(P₁)|", f"{det_J:.2e}", help="Determinante Jacobiano")
+
+# --- SECCIÓN 3: ANÁLISIS DETALLADO DE AUTOVALORES (5 COLUMNAS) ---
+st.markdown("---")
+st.subheader("🔬 Análisis de Autovalores del Sistema")
+
+col_ev1, col_ev2, col_ev3, col_ev4, col_ev5 = st.columns(5)
+
+with col_ev1:
+    st.markdown("""
+    <div style="background: #dbeafe; padding: 12px; border-radius: 6px; border: 1px solid #2563eb;">
+        <p style="color: #1e293b; font-weight: 600; font-size: 13px; margin: 0 0 8px 0;">λ₁</p>
+        <p style="color: #1e293b; font-weight: 700; font-size: 16px; margin: 0;">{:.4f}</p>
+        <p style="color: #64748b; font-size: 11px; margin: 4px 0 0 0;">Estabilidad</p>
+    </div>
+    """.format(ev1), unsafe_allow_html=True)
+
+with col_ev2:
+    st.markdown("""
+    <div style="background: #fed7aa; padding: 12px; border-radius: 6px; border: 1px solid #f59e0b;">
+        <p style="color: #1e293b; font-weight: 600; font-size: 13px; margin: 0 0 8px 0;">λ₂</p>
+        <p style="color: #1e293b; font-weight: 700; font-size: 16px; margin: 0;">{:.4f}</p>
+        <p style="color: #64748b; font-size: 11px; margin: 4px 0 0 0;">Transmisión</p>
+    </div>
+    """.format(ev2), unsafe_allow_html=True)
+
+with col_ev3:
+    color_bg = "#fee2e2" if ev3 > 0 else "#dcfce7"
+    color_border = "#ef4444" if ev3 > 0 else "#10b981"
+    st.markdown("""
+    <div style="background: {bg}; padding: 12px; border-radius: 6px; border: 2px solid {border};">
+        <p style="color: #1e293b; font-weight: 600; font-size: 13px; margin: 0 0 8px 0;">λ₃ (CRÍTICO)</p>
+        <p style="color: #1e293b; font-weight: 700; font-size: 16px; margin: 0;">{value:.4f}</p>
+        <p style="color: #64748b; font-size: 11px; margin: 4px 0 0 0;">Invasión I</p>
+    </div>
+    """.format(bg=color_bg, border=color_border, value=ev3), unsafe_allow_html=True)
+
+with col_ev4:
+    st.markdown("""
+    <div style="background: #f3e8ff; padding: 12px; border-radius: 6px; border: 1px solid #a855f7;">
+        <p style="color: #1e293b; font-weight: 600; font-size: 13px; margin: 0 0 8px 0;">λ₄</p>
+        <p style="color: #1e293b; font-weight: 700; font-size: 16px; margin: 0;">{:.4f}</p>
+        <p style="color: #64748b; font-size: 11px; margin: 4px 0 0 0;">Recuperación</p>
+    </div>
+    """.format(ev4), unsafe_allow_html=True)
+
+with col_ev5:
+    st.markdown("""
+    <div style="background: #d1fae5; padding: 12px; border-radius: 6px; border: 1px solid #10b981;">
+        <p style="color: #1e293b; font-weight: 600; font-size: 13px; margin: 0 0 8px 0;">λ₅</p>
+        <p style="color: #1e293b; font-weight: 700; font-size: 16px; margin: 0;">{:.4f}</p>
+        <p style="color: #64748b; font-size: 11px; margin: 4px 0 0 0;">Mortalidad</p>
+    </div>
+    """.format(ev5), unsafe_allow_html=True)
+
+# --- SECCIÓN 4: INTERPRETACIÓN DE RESULTADOS ---
+st.markdown("---")
+st.subheader("📋 Interpretación de Resultados")
+
+if E_p1 <= 0:
+    st.error("""
+    ### ⚠️ Equilibrio Matemáticamente Imposible
+    
+    **Problema:** $E_{P1} \\leq 0$
+    
+    Este equilibrio **no existe biológicamente** con los parámetros actuales, ya que la población expuesta 
+    debe ser positiva. Esto significa que el parámetro β (tasa de contacto) es demasiado bajo.
+    
+    **Soluciones:**
+    - Aumenta **λ*** (tasa de entrada)
+    - Disminuye **β** (tasa de contacto)
+    - Verifica que β > μ²/λ*
+    """)
+elif ev3 < 0:
+    st.success("""
+    ### ✅ Sistema Estable ante Invasión de Infecciosos
+    
+    **Análisis:** $\\lambda_3 < 0$
+    
+    Aunque existan susceptibles y expuestos en equilibrio, **una pequeña perturbación en la población 
+    infecciosa (I) decaerá exponencialmente**. El sistema permanecerá en P₁.
+    
+    **Interpretación:**
+    - El equilibrio latente P₁ es **localmente estable**
+    - Los infecciosos no pueden mantener la enfermedad
+    - El sistema vuelve al equilibrio libre de enfermedad P₀
+    """)
+else:
+    st.error("""
+    ### 🔥 Sistema Inestable ante Invasión de Infecciosos
+    
+    **Análisis:** $\\lambda_3 > 0$
+    
+    Una pequeña perturbación en la población infecciosa (I) **crecerá exponencialmente**, 
+    llevando el sistema desde P₁ hacia el **equilibrio endémico P*** (Caso 2).
+    
+    **Interpretación:**
+    - El equilibrio latente P₁ es **inestable**
+    - Los infecciosos pueden mantener la enfermedad
+    - El sistema evolucionará a la enfermedad endémica
+    """)
 
 # --- INFORMACIÓN ADICIONAL ---
 with st.expander("📋 Ver Datos Numéricos y Explicación", expanded=False):

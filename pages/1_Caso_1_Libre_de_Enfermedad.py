@@ -4,6 +4,11 @@ import os
 from scipy.integrate import odeint
 import plotly.graph_objects as go
 
+# Importar configuración de tema
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from plotly_theme import COLORS, get_transparent_layout
+
 st.set_page_config(
     page_title="Caso 1: Libre de Enfermedad", 
     layout="wide",
@@ -109,226 +114,347 @@ y0 = [X0, E0, 0, 0, 0]
 ret = odeint(model, y0, t, args=(lam, mu, beta, epsilon, omega, gamma, alpha, delta))
 X, E, I, H, R = ret.T
 
-# --- VISUALIZACIÓN ---
-col1, col2 = st.columns([2, 1])
+# --- VISUALIZACIÓN PROFESIONAL COMPLETA ---
+st.markdown("---")
+st.markdown("## 📊 ANÁLISIS DE ESTABILIDAD - EQUILIBRIO P₀")
 
-with col1:
-    st.subheader("📈 Dinámica Temporal")
-    
-    # Gráfico principal
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=t, y=X, name="Susceptibles (X)", line=dict(color='blue', width=2)))
-    fig.add_trace(go.Scatter(x=t, y=E, name="Expuestos (E)", line=dict(color='orange', width=2, dash='dot')))
-    fig.add_trace(go.Scatter(x=t, y=I, name="Infecciosos (I)", line=dict(color='red', width=3)))
-    fig.add_trace(go.Scatter(x=t, y=H, name="Hospitalizados (H)", line=dict(color='purple', width=2, dash='dash')))
-    fig.add_trace(go.Scatter(x=t, y=R, name="Recuperados (R)", line=dict(color='green', width=2, dash='dash')))
-    
-    fig.update_layout(
-        template="plotly_white", 
-        xaxis_title="Tiempo",
-        yaxis_title="Población",
-        height=500,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Análisis de resultados
-    if ev2 < 0:
-        st.success("✅ **El sistema es estable**: La perturbación inicial de expuestos desaparece y la enfermedad se extingue.")
-    else:
-        st.error("⚠️ **El sistema es inestable**: Los expuestos crecen, buscando un nuevo equilibrio endémico.")
+# SECCIÓN 1: GRÁFICO TEMPORAL COMPLETO (FULL WIDTH)
+st.markdown("### 📈 Dinámica Temporal del Sistema XEIHR")
+st.markdown("*Evolución de las 5 compartimentos epidemiológicos desde la condición inicial hacia el equilibrio*")
 
-with col2:
-    st.subheader("🔍 Análisis de Estabilidad ($P_0$)")
-    
-    # Equilibrio
-    st.markdown("#### Punto de Equilibrio")
-    st.latex(fr"P_0 = \left( \frac{{\lambda^*}}{{\mu}}, 0, 0, 0, 0 \right) = ({X_p0:.2f}, 0, 0, 0, 0)")
-    
-    st.markdown("#### Valores Propios (Eigenvalues)")
-    st.markdown("Determinan si pequeñas perturbaciones crecen o desaparecen:")
-    
-    # Estado de estabilidad
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=t, y=X, name="Susceptibles (X)", 
+                        line=dict(color=COLORS['susceptibles'], width=3)))
+fig.add_trace(go.Scatter(x=t, y=E, name="Expuestos (E)", 
+                        line=dict(color=COLORS['expuestos'], width=2.5, dash='dot')))
+fig.add_trace(go.Scatter(x=t, y=I, name="Infecciosos (I)", 
+                        line=dict(color=COLORS['infecciosos'], width=3.5)))
+fig.add_trace(go.Scatter(x=t, y=H, name="Hospitalizados (H)", 
+                        line=dict(color=COLORS['hospitalizados'], width=2.5, dash='dash')))
+fig.add_trace(go.Scatter(x=t, y=R, name="Recuperados (R)", 
+                        line=dict(color=COLORS['recuperados'], width=3)))
+
+fig.update_layout(
+    **get_transparent_layout(
+        height=550,
+        xaxis_title="Tiempo (t)",
+        yaxis_title="Población (individuos)",
+        hovermode='x unified'
+    ),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11)),
+    title=None
+)
+st.plotly_chart(fig, use_container_width=True)
+
+# SECCIÓN 2: PANEL DE ESTADO Y MÉTRICAS PRINCIPALES
+st.markdown("### 🔍 Estado Dinámico del Sistema")
+
+col_status1, col_status2, col_status3 = st.columns(3)
+
+with col_status1:
+    st.markdown("**Estado de Estabilidad**")
     if ev2 < 0:
-        st.success("**ESTABLE**")
-        st.caption("La enfermedad se extingue naturalmente ($\lambda_2 < 0$)")
+        st.success("✅ SISTEMA ESTABLE", icon="✅")
+        st.markdown("*La enfermedad se extingue naturalmente*")
     else:
-        st.error("**INESTABLE**")
-        st.caption("Cualquier caso introducido provocará un brote ($\lambda_2 > 0$)")
-    
-    st.divider()
-    
-    # Detalle de valores propios
-    st.markdown("**Detalle de Valores Propios:**")
-    
-    col_ev1, col_ev2 = st.columns(2)
-    with col_ev1:
-        st.metric("λ₁", f"{ev1:.3f}")
-        st.metric("λ₃", f"{ev3:.3f}")
-        st.metric("λ₅", f"{ev5:.3f}")
-    
-    with col_ev2:
-        if ev2 < 0:
-            st.metric("λ₂", f"{ev2:.3f}", delta="Estable", delta_color="normal")
-        else:
-            st.metric("λ₂", f"{ev2:.3f}", delta="Inestable", delta_color="inverse")
-        st.metric("λ₄", f"{ev4:.3f}")
-    
-    # Número reproductivo básico
+        st.error("⚠️ SISTEMA INESTABLE", icon="⚠️")
+        st.markdown("*Hay riesgo de brote epidémico*")
+
+with col_status2:
+    st.markdown("**Número Reproductivo Básico**")
     R0 = (beta * X_p0) / mu
-    st.divider()
-    st.metric("Número Reproductivo Básico (R₀)", f"{R0:.3f}")
-    if R0 < 1:
-        st.caption("R₀ < 1: La enfermedad desaparece")
+    col_r0_num, col_r0_status = st.columns([2, 1])
+    with col_r0_num:
+        st.metric("R₀", f"{R0:.4f}", label_visibility="collapsed")
+    with col_r0_status:
+        if R0 < 1:
+            st.markdown("🟢 **R₀ < 1**\n*Controlado*")
+        else:
+            st.markdown("🔴 **R₀ > 1**\n*Riesgo*")
+
+with col_status3:
+    st.markdown("**Punto de Equilibrio**")
+    st.info(f"P₀ = ({X_p0:.1f}, 0, 0, 0, 0)", icon="ℹ️")
+    st.markdown(f"*Susceptibles: {X_p0:.2f} individuos*")
+
+# SECCIÓN 3: AUTOVALORES Y ANÁLISIS ESPECTRAL
+st.markdown("---")
+st.markdown("### 🔬 Análisis de Autovalores (Análisis Espectral)")
+st.markdown("*Los autovalores determinan la estabilidad local del equilibrio. Si todos tienen parte real negativa, el sistema es estable.*")
+
+col_ev1, col_ev2, col_ev3, col_ev4, col_ev5 = st.columns(5)
+
+with col_ev1:
+    st.metric("λ₁", f"{ev1:.4f}")
+    if ev1 < 0:
+        st.caption("🟢 Negativo")
     else:
-        st.caption("R₀ ≥ 1: La enfermedad persiste")
+        st.caption("🔴 Positivo")
 
-# --- SECCIÓN: VALIDACIÓN ESPECTRAL (GERSHGORIN) ---
-st.divider()
-st.subheader("🎯 Validación Espectral: Círculos de Gershgorin")
+with col_ev2:
+    st.metric("λ₂", f"{ev2:.4f}")
+    if ev2 < 0:
+        st.caption("🟢 Negativo\n(CRÍTICO)")
+    else:
+        st.caption("🔴 Positivo\n(CRÍTICO)")
 
-st.markdown("""
-El **Teorema de Gershgorin** establece que todos los autovalores de una matriz están contenidos 
-en la unión de discos de Gershgorin. Cada disco está centrado en un elemento diagonal y su radio 
-es la suma de valores absolutos de los elementos no-diagonales en esa fila.
+with col_ev3:
+    st.metric("λ₃", f"{ev3:.4f}")
+    if ev3 < 0:
+        st.caption("🟢 Negativo")
+    else:
+        st.caption("🔴 Positivo")
+
+with col_ev4:
+    st.metric("λ₄", f"{ev4:.4f}")
+    if ev4 < 0:
+        st.caption("🟢 Negativo")
+    else:
+        st.caption("🔴 Positivo")
+
+with col_ev5:
+    st.metric("λ₅", f"{ev5:.4f}")
+    if ev5 < 0:
+        st.caption("🟢 Negativo")
+    else:
+        st.caption("🔴 Positivo")
+
+st.info("""
+**Interpretación:** El autovalor **λ₂** es el más crítico para la estabilidad del equilibrio libre de enfermedad. 
+Si λ₂ < 0, la enfermedad desaparece; si λ₂ > 0, puede haber brote epidémico.
 """)
 
-# Mostrar matriz Jacobiana
-st.markdown("#### Matriz Jacobiana en $P_0$:")
-st.latex(r"""
-J(P_0) = \begin{pmatrix}
--\mu & -\beta X_p^0 & 0 & 0 & 0 \\
-0 & \beta X_p^0 - \mu & 0 & 0 & 0 \\
-0 & 0 & -(\mu+\omega+\gamma) & 0 & 0 \\
-0 & 0 & \omega & -(\mu+\alpha+\delta) & 0 \\
-0 & 0 & 0 & \delta & -\mu
-\end{pmatrix}
+# SECCIÓN 4: CÍRCULOS DE GERSHGORIN - GRÁFICO COMPLETO
+st.markdown("---")
+st.markdown("### 🎯 Validación Espectral: Teorema de Gershgorin")
+st.markdown("""
+El **Teorema de Gershgorin** establece que todos los autovalores están contenidos en la unión de discos en el plano complejo.
+Cada disco está centrado en un elemento diagonal de la matriz y su radio es la suma de valores absolutos de los elementos no-diagonales.
 """)
 
 # Cálculos de Gershgorin
-col_gersh1, col_gersh2 = st.columns(2)
+c1 = -mu
+r1 = abs(-beta * X_p0)
+c2 = beta * X_p0 - mu
+r2 = 0
+c3 = -(mu + omega + gamma)
+r3 = 0
+c4 = -(mu + alpha + delta)
+r4 = abs(omega)
+c5 = -mu
+r5 = abs(delta)
 
-with col_gersh1:
-    st.markdown("#### Discos de Gershgorin")
-    
-    # Centro y radio para cada fila
-    # Fila 1 (X): Centro = -μ, Radio = |−βX_p0|
-    c1 = -mu
-    r1 = abs(-beta * X_p0)
-    
-    # Fila 2 (E): Centro = βX_p0 - μ, Radio = 0
-    c2 = beta * X_p0 - mu
-    r2 = 0
-    
-    # Fila 3 (I): Centro = -(μ+ω+γ), Radio = 0
-    c3 = -(mu + omega + gamma)
-    r3 = 0
-    
-    # Fila 4 (H): Centro = -(μ+α+δ), Radio = |ω|
-    c4 = -(mu + alpha + delta)
-    r4 = abs(omega)
-    
-    # Fila 5 (R): Centro = -μ, Radio = |δ|
-    c5 = -mu
-    r5 = abs(delta)
-    
-    st.write(f"**Fila 1 (X):** Centro = {c1:.3f}, Radio = {r1:.3f}")
-    st.write(f"**Fila 2 (E):** Centro = {c2:.3f}, Radio = {r2:.3f} **← Crítico**")
-    st.write(f"**Fila 3 (I):** Centro = {c3:.3f}, Radio = {r3:.3f}")
-    st.write(f"**Fila 4 (H):** Centro = {c4:.3f}, Radio = {r4:.3f}")
-    st.write(f"**Fila 5 (R):** Centro = {c5:.3f}, Radio = {r5:.3f}")
-
-with col_gersh2:
-    st.markdown("#### Interpretación")
-    st.info("""
-    El disco **crítico (Fila 2)** determina la estabilidad.
-    
-    - Si su centro $c_2 = \\beta X_p^0 - \\mu$ está en la **zona roja** (lado positivo del plano), 
-      el sistema es **inestable**.
-    
-    - Si está en la **zona azul** (lado negativo), el sistema es **estable**.
-    """)
-
-# Gráfico de Gershgorin
 fig_gersh = go.Figure()
 
-# Colores de los discos según posición
-disk_colors = ['lightblue', 'red' if c2 > 0 else 'lightgreen', 'lightblue', 'lightblue', 'lightblue']
+color_critical = COLORS['error'] if c2 > 0 else COLORS['success']
+
 disk_centers = [c1, c2, c3, c4, c5]
 disk_radii = [r1, r2, r3, r4, r5]
-disk_labels = ['X (Fila 1)', 'E (Fila 2) - Crítico', 'I (Fila 3)', 'H (Fila 4)', 'R (Fila 5)']
+disk_labels = ['X (Fila 1)', 'E (Fila 2) - CRÍTICO', 'I (Fila 3)', 'H (Fila 4)', 'R (Fila 5)']
+disk_colors = [COLORS['primary'], color_critical, COLORS['primary'], COLORS['primary'], COLORS['primary']]
 
-# Agregar discos como círculos en el plano complejo
-for i, (center, radius, color, label) in enumerate(zip(disk_centers, disk_radii, disk_colors, disk_labels)):
-    if radius > 0:
-        # Crear puntos del círculo
-        theta = np.linspace(0, 2*np.pi, 100)
-        circle_x = center + radius * np.cos(theta)
-        circle_y = radius * np.sin(theta)
-        fig_gersh.add_trace(go.Scatter(
-            x=circle_x, y=circle_y,
-            fill='toself',
-            name=label,
-            line_color=color,
+for center, radius, color, label in zip(disk_centers, disk_radii, disk_colors, disk_labels):
+    if radius > 0.001:
+        fig_gersh.add_shape(
+            type="circle",
+            x0=center - radius, y0=-radius,
+            x1=center + radius, y1=radius,
+            line=dict(color=color, width=2.5),
             fillcolor=color,
-            opacity=0.3,
-            mode='lines'
-        ))
+            opacity=0.15,
+            name=label
+        )
     
-    # Agregar marcador del centro
     fig_gersh.add_trace(go.Scatter(
         x=[center], y=[0],
         mode='markers',
-        marker=dict(size=10, color=color, symbol='circle'),
-        name=f'{label} (Centro)',
-        showlegend=False
+        marker=dict(size=12, color=color, symbol='circle', line=dict(color=COLORS['dark'], width=2)),
+        name=label,
+        hovertemplate=f'<b>{label}</b><br>Centro: {center:.3f}<br>Radio: {radius:.3f}<extra></extra>'
     ))
 
-# Agregar eje imaginario (línea vertical en x=0)
-fig_gersh.add_vline(x=0, line_dash="dash", line_color="black", line_width=2, annotation_text="Re(λ)=0")
+fig_gersh.add_vline(x=0, line_dash="solid", line_color='#0f172a', line_width=3.5, 
+                    annotation_text="Re(λ)=0", annotation_position="top left", annotation_font_color='#0f172a', annotation_font_size=13, annotation_font_family="Arial")
+fig_gersh.add_hline(y=0, line_dash="solid", line_color='#64748b', line_width=2)
 
-# Agregar zona de estabilidad (izquierda) y inestabilidad (derecha)
-fig_gersh.add_vrect(x0=min(disk_centers)-1, x1=0, fillcolor="green", opacity=0.05, 
-                    line_width=0, layer="below", annotation_text="Estable", annotation_position="top left")
-fig_gersh.add_vrect(x0=0, x1=max(disk_centers)+1, fillcolor="red", opacity=0.05, 
-                    line_width=0, layer="below", annotation_text="Inestable", annotation_position="top right")
+fig_gersh.add_trace(go.Scatter(
+    x=[0], y=[0],
+    mode='markers',
+    marker=dict(size=11, color='#0f172a', symbol='x', line=dict(color='#0f172a', width=3)),
+    name='Origen (0,0)',
+    hovertemplate='<b>Origen</b><br>Re(λ)=0, Im(λ)=0<extra></extra>'
+))
 
-# Actualizar layout
+min_center = min(disk_centers)
+max_center = max(disk_centers)
+max_radius = max(disk_radii) if disk_radii else 0.5
+
+fig_gersh.add_vrect(x0=min_center-max_radius-1, x1=0, fillcolor=COLORS['success'], opacity=0.06, line_width=0, layer="below")
+fig_gersh.add_vrect(x0=0, x1=max_center+max_radius+1, fillcolor=COLORS['error'], opacity=0.06, line_width=0, layer="below")
+
 fig_gersh.update_layout(
-    title="Espectro de Autovalores: Círculos de Gershgorin en P₀",
-    xaxis_title="Re(λ)",
-    yaxis_title="Im(λ)",
-    template="plotly_white",
-    height=500,
-    xaxis=dict(zeroline=True, showgrid=True),
-    yaxis=dict(zeroline=True, showgrid=True),
-    hovermode='closest'
+    **get_transparent_layout(
+        height=600,
+        xaxis_title="Parte Real: Re(λ)",
+        yaxis_title="Parte Imaginaria: Im(λ)"
+    ),
+    title=None,
+    showlegend=True,
+    legend=dict(x=0.02, y=0.98, bgcolor='rgba(255,255,255,0.95)', bordercolor='#0f172a', borderwidth=2, font=dict(size=11, color='#0f172a'))
 )
+
+fig_gersh.update_xaxes(zeroline=False)
+fig_gersh.update_yaxes(zeroline=False)
 
 st.plotly_chart(fig_gersh, use_container_width=True)
 
-# Conclusión
-st.markdown("---")
-if c2 < 0:
-    st.success("""
-    ✅ **Conclusión:** El disco crítico (Fila 2) está completamente en el semiplano izquierdo.
-    Todos los autovalores tienen parte real negativa → **Sistema Estable**.
-    """)
-else:
-    st.error("""
-    ⚠️ **Conclusión:** El disco crítico (Fila 2) se extiende al semiplano derecho.
-    Al menos uno de los autovalores puede ser positivo → **Posible Inestabilidad**.
+col_gersh_interp1, col_gersh_interp2 = st.columns(2)
+
+with col_gersh_interp1:
+    st.markdown("**Significado de las Zonas**")
+    st.markdown("""
+    - **Zona Azul (Izquierda):** Semiplano izquierdo
+      - Todos los autovalores tienen parte real negativa
+      - ✅ Implica ESTABILIDAD
+    
+    - **Zona Roja (Derecha):** Semiplano derecho
+      - Al menos un autovalor tiene parte real positiva
+      - ⚠️ Implica INESTABILIDAD
     """)
 
-# --- INFORMACIÓN ADICIONAL ---
-with st.expander("📊 Ver Datos Numéricos Finales"):
-    col_data1, col_data2 = st.columns(2)
-    with col_data1:
-        st.markdown("**Poblaciones Finales:**")
-        st.write(f"- Susceptibles (X): {X[-1]:.2f}")
-        st.write(f"- Expuestos (E): {E[-1]:.2f}")
-        st.write(f"- Infecciosos (I): {I[-1]:.2f}")
-    with col_data2:
-        st.write(f"- Hospitalizados (H): {H[-1]:.2f}")
-        st.write(f"- Recuperados (R): {R[-1]:.2f}")
-        st.write(f"- Total: {X[-1] + E[-1] + I[-1] + H[-1] + R[-1]:.2f}")
+with col_gersh_interp2:
+    st.markdown("**Análisis del Disco Crítico (Fila 2 - E)**")
+    if c2 < 0:
+        st.success(f"""
+        ✅ El disco crítico está completamente en el semiplano izquierdo.
+        - Centro: {c2:.4f}
+        - Radio: {r2:.4f}
+        - **Conclusión: Sistema ESTABLE**
+        """)
+    else:
+        st.error(f"""
+        ⚠️ El disco crítico se extiende al semiplano derecho.
+        - Centro: {c2:.4f}
+        - Radio: {r2:.4f}
+        - **Conclusión: Riesgo de INESTABILIDAD**
+        """)
+# SECCIÓN 5: MAPA DE CALOR R₀
+st.markdown("---")
+st.markdown("### 🔥 Análisis de Sensibilidad: Mapa de Calor de R₀")
+st.markdown("""
+Visualización del número reproductivo básico en el espacio bidimensional de parámetros (β, μ).
+La **línea blanca crítica** marca donde R₀ = 1, separando la zona segura (azul, R₀ < 1) de la zona de riesgo (rojo, R₀ > 1).
+""")
+
+beta_range = np.linspace(0.001, 0.15, 120)
+mu_range = np.linspace(0.01, 0.5, 120)
+beta_mesh, mu_mesh = np.meshgrid(beta_range, mu_range)
+
+R0_mesh = (beta_mesh * lam) / (mu_mesh ** 2)
+
+fig_heatmap = go.Figure(data=go.Contour(
+    z=R0_mesh,
+    x=beta_range,
+    y=mu_range,
+    colorscale=[
+        [0.0, COLORS['primary']],
+        [0.3, '#60a5fa'],
+        [0.5, 'white'],
+        [0.7, '#fca5a5'],
+        [1.0, COLORS['error']]
+    ],
+    contours=dict(
+        showlabels=True,
+        labelfont=dict(size=11, color='black'),
+        labelformat='.1f'
+    ),
+    colorbar=dict(title='$R_0$', thickness=20, len=0.8, tickfont=dict(size=10)),
+    hovertemplate='β: %{x:.4f}<br>μ: %{y:.4f}<br>$R_0$: %{z:.3f}<extra></extra>'
+))
+
+fig_heatmap.add_trace(go.Contour(
+    z=R0_mesh,
+    x=beta_range,
+    y=mu_range,
+    contours=dict(start=1, end=1, size=0),
+    line=dict(color='#0f172a', width=5),
+    showscale=False,
+    hoverinfo='skip',
+    name='R₀ = 1 (Frontera Crítica)'
+))
+
+current_R0 = (beta * lam) / (mu ** 2)
+fig_heatmap.add_trace(go.Scatter(
+    x=[beta], y=[mu],
+    mode='markers',
+    marker=dict(size=16, color='gold', symbol='diamond', line=dict(color='#0f172a', width=3)),
+    name=f'Configuración Actual\n(R₀={current_R0:.3f})',
+    hovertemplate='<b>Parámetros Actuales</b><br>β: %{x:.4f}<br>μ: %{y:.4f}<br>R₀: ' + f'{current_R0:.3f}<extra></extra>'
+))
+
+fig_heatmap.update_layout(
+    **get_transparent_layout(
+        height=600,
+        xaxis_title="Tasa de Transmisión (β)",
+        yaxis_title="Tasa de Mortalidad Natural (μ)"
+    ),
+    title=None
+)
+
+st.plotly_chart(fig_heatmap, use_container_width=True)
+
+col_heat_interp1, col_heat_interp2 = st.columns(2)
+
+with col_heat_interp1:
+    st.markdown("**Interpretación de Zonas**")
+    st.markdown(f"""
+    - **Zona Azul (R₀ < 1):** 
+      - Enfermedad controlable
+      - Desaparece naturalmente
+      - ✅ Seguro epidemiológico
+    
+    - **Zona Roja (R₀ > 1):**
+      - Enfermedad se propaga
+      - Requiere intervención
+      - ⚠️ Zona de Riesgo
+    """)
+
+with col_heat_interp2:
+    st.markdown("**Configuración Actual**")
+    st.metric("R₀ Actual", f"{current_R0:.4f}", label_visibility="collapsed")
+    if current_R0 < 1:
+        st.success("✅ Escenario Seguro - Enfermedad Controlable")
+    else:
+        st.warning("⚠️ Escenario de Riesgo - Requiere Intervención")
+    
+    st.markdown("**Sugerencia:**")
+    if current_R0 < 1:
+        st.info("Mantén β bajo o μ alto para preservar estabilidad")
+    else:
+        st.info("Aumenta μ (mortalidad) o disminuye β (transmisión) para estabilizar")
+
+# SECCIÓN FINAL: DATOS NUMÉRICOS
+st.markdown("---")
+st.markdown("### 📋 Datos Numéricos y Poblaciones Finales")
+
+col_data1, col_data2, col_data3 = st.columns(3)
+
+with col_data1:
+    st.markdown("**Poblaciones Finales**")
+    st.write(f"• **X (Susceptibles):** {X[-1]:.2f}")
+    st.write(f"• **E (Expuestos):** {E[-1]:.6f}")
+    st.write(f"• **I (Infecciosos):** {I[-1]:.6f}")
+
+with col_data2:
+    st.markdown("**Continuación**")
+    st.write(f"• **H (Hospitalizados):** {H[-1]:.2f}")
+    st.write(f"• **R (Recuperados):** {R[-1]:.2f}")
+    st.write(f"• **Población Total:** {X[-1] + E[-1] + I[-1] + H[-1] + R[-1]:.2f}")
+
+with col_data3:
+    st.markdown("**Parámetros de Simulación**")
+    st.write(f"• **Tiempo Total:** {t_max} unidades")
+    st.write(f"• **Puntos Simulados:** {len(t)}")
+    st.write(f"• **β (Transmisión):** {beta:.4f}")
+
+st.success("✅ **Análisis completado exitosamente**")
