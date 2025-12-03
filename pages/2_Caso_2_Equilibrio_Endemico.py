@@ -119,9 +119,12 @@ with col1:
     
     # Agregar líneas de equilibrio teórico si es válido
     if valid_equilibrium and I_star > 0:
-        fig.add_hline(y=X_star, line_dash="dash", line_color="blue", annotation_text="X*")
-        fig.add_hline(y=E_star, line_dash="dash", line_color="orange", annotation_text="E*")
-        fig.add_hline(y=I_star, line_dash="dash", line_color="red", annotation_text="I*")
+        fig.add_hline(y=X_star, line_dash="dash", line_color="blue", line_width=3,
+                     annotation_text=f"X* = {X_star:.2f}", annotation_position="right")
+        fig.add_hline(y=E_star, line_dash="dash", line_color="orange", line_width=3,
+                     annotation_text=f"E* = {E_star:.2f}", annotation_position="right")
+        fig.add_hline(y=I_star, line_dash="dot", line_color="darkred", line_width=3,
+                     annotation_text=f"I* = {I_star:.2f}", annotation_position="right")
     
     fig.update_layout(
         template="plotly_white", 
@@ -191,6 +194,60 @@ with col_ana2:
     else:
         R0 = (beta * (lam/mu)) / mu
         st.metric("R₀ básico", f"{R0:.3f}")
+
+# --- INDICADOR DE CONVERGENCIA ASINTÓTICA ---
+st.markdown("---")
+st.subheader("🔄 Validación de Convergencia Asintótica")
+
+if valid_equilibrium and I_star > 0:
+    # Calcular error de convergencia
+    I_final = I[-1]
+    error_convergencia = abs(I_final - I_star)
+    error_relativo = error_convergencia / I_star * 100 if I_star > 0 else float('inf')
+    
+    # Mostrar métricas
+    col_conv1, col_conv2 = st.columns(2)
+    
+    with col_conv1:
+        st.metric("Valor Final de I", f"{I_final:.4f}")
+        st.metric("Valor Teórico I*", f"{I_star:.4f}")
+    
+    with col_conv2:
+        st.metric("Error Absoluto |I - I*|", f"{error_convergencia:.6f}")
+        st.metric("Error Relativo (%)", f"{error_relativo:.4f}%")
+    
+    # Indicador de éxito
+    st.markdown("---")
+    if error_convergencia < 1e-3:
+        st.success(f"""
+        ✅ **Convergencia Asintótica Validada**
+        
+        El sistema ha convergido correctamente al equilibrio endémico teórico.
+        El error de convergencia ($|I_{{final}} - I^*| = {error_convergencia:.2e}$) es menor a $10^{{-3}}$,
+        confirmando la validez de la solución numérica.
+        """)
+    elif error_convergencia < 0.1:
+        st.info(f"""
+        ⚠️ **Convergencia en Progreso**
+        
+        El sistema está convergiendo, pero el tiempo de simulación podría ser insuficiente.
+        Error: {error_convergencia:.2e}
+        
+        💡 **Sugerencia:** Aumenta el "Tiempo de Simulación" para mejorar la convergencia.
+        """)
+    else:
+        st.warning(f"""
+        ❌ **Convergencia Incompleta**
+        
+        El sistema aún no ha alcanzado el equilibrio endémico (Error: {error_convergencia:.2f}).
+        
+        Posibles causas:
+        - Tiempo de simulación insuficiente
+        - Parámetros que generan oscilaciones persistentes
+        - Condiciones iniciales alejadas del equilibrio
+        """)
+else:
+    st.info("No hay equilibrio endémico válido con los parámetros actuales. La métrica de convergencia no aplica.")
 
 # --- DATOS FINALES ---
 with st.expander("📋 Ver Datos Numéricos Completos"):

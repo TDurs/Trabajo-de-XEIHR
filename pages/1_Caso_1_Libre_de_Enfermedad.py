@@ -183,6 +183,143 @@ with col2:
     else:
         st.caption("R₀ ≥ 1: La enfermedad persiste")
 
+# --- SECCIÓN: VALIDACIÓN ESPECTRAL (GERSHGORIN) ---
+st.divider()
+st.subheader("🎯 Validación Espectral: Círculos de Gershgorin")
+
+st.markdown("""
+El **Teorema de Gershgorin** establece que todos los autovalores de una matriz están contenidos 
+en la unión de discos de Gershgorin. Cada disco está centrado en un elemento diagonal y su radio 
+es la suma de valores absolutos de los elementos no-diagonales en esa fila.
+""")
+
+# Mostrar matriz Jacobiana
+st.markdown("#### Matriz Jacobiana en $P_0$:")
+st.latex(r"""
+J(P_0) = \begin{pmatrix}
+-\mu & -\beta X_p^0 & 0 & 0 & 0 \\
+0 & \beta X_p^0 - \mu & 0 & 0 & 0 \\
+0 & 0 & -(\mu+\omega+\gamma) & 0 & 0 \\
+0 & 0 & \omega & -(\mu+\alpha+\delta) & 0 \\
+0 & 0 & 0 & \delta & -\mu
+\end{pmatrix}
+""")
+
+# Cálculos de Gershgorin
+col_gersh1, col_gersh2 = st.columns(2)
+
+with col_gersh1:
+    st.markdown("#### Discos de Gershgorin")
+    
+    # Centro y radio para cada fila
+    # Fila 1 (X): Centro = -μ, Radio = |−βX_p0|
+    c1 = -mu
+    r1 = abs(-beta * X_p0)
+    
+    # Fila 2 (E): Centro = βX_p0 - μ, Radio = 0
+    c2 = beta * X_p0 - mu
+    r2 = 0
+    
+    # Fila 3 (I): Centro = -(μ+ω+γ), Radio = 0
+    c3 = -(mu + omega + gamma)
+    r3 = 0
+    
+    # Fila 4 (H): Centro = -(μ+α+δ), Radio = |ω|
+    c4 = -(mu + alpha + delta)
+    r4 = abs(omega)
+    
+    # Fila 5 (R): Centro = -μ, Radio = |δ|
+    c5 = -mu
+    r5 = abs(delta)
+    
+    st.write(f"**Fila 1 (X):** Centro = {c1:.3f}, Radio = {r1:.3f}")
+    st.write(f"**Fila 2 (E):** Centro = {c2:.3f}, Radio = {r2:.3f} **← Crítico**")
+    st.write(f"**Fila 3 (I):** Centro = {c3:.3f}, Radio = {r3:.3f}")
+    st.write(f"**Fila 4 (H):** Centro = {c4:.3f}, Radio = {r4:.3f}")
+    st.write(f"**Fila 5 (R):** Centro = {c5:.3f}, Radio = {r5:.3f}")
+
+with col_gersh2:
+    st.markdown("#### Interpretación")
+    st.info("""
+    El disco **crítico (Fila 2)** determina la estabilidad.
+    
+    - Si su centro $c_2 = \\beta X_p^0 - \\mu$ está en la **zona roja** (lado positivo del plano), 
+      el sistema es **inestable**.
+    
+    - Si está en la **zona azul** (lado negativo), el sistema es **estable**.
+    """)
+
+# Gráfico de Gershgorin
+fig_gersh = go.Figure()
+
+# Colores de los discos según posición
+disk_colors = ['lightblue', 'red' if c2 > 0 else 'lightgreen', 'lightblue', 'lightblue', 'lightblue']
+disk_centers = [c1, c2, c3, c4, c5]
+disk_radii = [r1, r2, r3, r4, r5]
+disk_labels = ['X (Fila 1)', 'E (Fila 2) - Crítico', 'I (Fila 3)', 'H (Fila 4)', 'R (Fila 5)']
+
+# Agregar discos como círculos en el plano complejo
+for i, (center, radius, color, label) in enumerate(zip(disk_centers, disk_radii, disk_colors, disk_labels)):
+    if radius > 0:
+        # Crear puntos del círculo
+        theta = np.linspace(0, 2*np.pi, 100)
+        circle_x = center + radius * np.cos(theta)
+        circle_y = radius * np.sin(theta)
+        fig_gersh.add_trace(go.Scatter(
+            x=circle_x, y=circle_y,
+            fill='toself',
+            name=label,
+            line_color=color,
+            fillcolor=color,
+            opacity=0.3,
+            mode='lines'
+        ))
+    
+    # Agregar marcador del centro
+    fig_gersh.add_trace(go.Scatter(
+        x=[center], y=[0],
+        mode='markers',
+        marker=dict(size=10, color=color, symbol='circle'),
+        name=f'{label} (Centro)',
+        showlegend=False
+    ))
+
+# Agregar eje imaginario (línea vertical en x=0)
+fig_gersh.add_vline(x=0, line_dash="dash", line_color="black", line_width=2, annotation_text="Re(λ)=0")
+
+# Agregar zona de estabilidad (izquierda) y inestabilidad (derecha)
+fig_gersh.add_vrect(x0=min(disk_centers)-1, x1=0, fillcolor="green", opacity=0.05, 
+                    line_width=0, layer="below", annotation_text="Estable", annotation_position="top left")
+fig_gersh.add_vrect(x0=0, x1=max(disk_centers)+1, fillcolor="red", opacity=0.05, 
+                    line_width=0, layer="below", annotation_text="Inestable", annotation_position="top right")
+
+# Actualizar layout
+fig_gersh.update_layout(
+    title="Espectro de Autovalores: Círculos de Gershgorin en P₀",
+    xaxis_title="Re(λ)",
+    yaxis_title="Im(λ)",
+    template="plotly_white",
+    height=500,
+    xaxis=dict(zeroline=True, showgrid=True),
+    yaxis=dict(zeroline=True, showgrid=True),
+    hovermode='closest'
+)
+
+st.plotly_chart(fig_gersh, use_container_width=True)
+
+# Conclusión
+st.markdown("---")
+if c2 < 0:
+    st.success("""
+    ✅ **Conclusión:** El disco crítico (Fila 2) está completamente en el semiplano izquierdo.
+    Todos los autovalores tienen parte real negativa → **Sistema Estable**.
+    """)
+else:
+    st.error("""
+    ⚠️ **Conclusión:** El disco crítico (Fila 2) se extiende al semiplano derecho.
+    Al menos uno de los autovalores puede ser positivo → **Posible Inestabilidad**.
+    """)
+
 # --- INFORMACIÓN ADICIONAL ---
 with st.expander("📊 Ver Datos Numéricos Finales"):
     col_data1, col_data2 = st.columns(2)
